@@ -73,3 +73,7 @@ export interface ReviewProps {
   yearsOnPlatform: string;
   tripType: string;
 }
+
+interface ReviewSectionProps {
+  propertyId: string;
+}

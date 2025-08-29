@@ -1,5 +1,7 @@
 import { PROPERTYLISTINGSAMPLE, PROPERTYLISTINGDESCRIPTIONS, SAMPLE_REVIEWS } from "@/constants/index"; 
 import { useRouter } from "next/router"; 
+import axios from "axios";
+import { useEffect, useState } from "react";
 import PropertyDetail from "@/components/property/PropertyDetail"; 
 import BookingSection from "@/components/property/BookingSection";
 import ReviewSection from "@/components/property/ReviewSection";
@@ -8,11 +10,56 @@ import { FaArrowLeft, FaHeart, FaShare } from "react-icons/fa";
 export default function PropertyPage() { 
     const router = useRouter(); 
     const { id } = router.query; 
-    const propertyId = parseInt(id as string);
+    const [property, setProperty] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const propertyDesc = PROPERTYLISTINGDESCRIPTIONS.find((item) => item.id === propertyId);
 
-    if (!propertyDesc) return (
+    useEffect(() => {
+        const fetchProperty = async () => {
+            if (!id) return;
+            try {
+                setLoading(true);
+                setError(null)
+                const response = await axios.get(`/api/properties/${id}`);
+                setProperty(response.data);
+            } catch (error) {
+                console.error('Error fetching property details:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProperty();
+    }, [id]);
+
+
+    if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-lg text-teal-900">Loading Properties</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <p className="mb-6 text-2xl text-red-600 font-bold">{error}</p>
+        <button
+          onClick={() => router.back()}
+          className="bg-black text-white px-8 py-3 rounded-lg hover:bg-gray-700 transition-colors duration-300"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+    if (!property) return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
             <p className="mb-14 text-4xl sm:text-7xl font-extrabold text-gray-900 text-center">Property Not Found</p>
             <button 
@@ -74,14 +121,14 @@ export default function PropertyPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-8">
                     {/* Left side - Property details */}
                     <div className="lg:col-span-2 bg-white lg:bg-transparent">
-                        <PropertyDetail property={propertyDesc} />
-                        <ReviewSection reviews={SAMPLE_REVIEWS} />
+                        <PropertyDetail property={property} />
+                        <ReviewSection propertyId={property.id}/>
                     </div>
                     
                     {/* Right side - Booking section */}
                     <div className="lg:col-span-1">
                         <div className="lg:sticky lg:top-6">
-                            <BookingSection price={propertyDesc.price} />
+                            <BookingSection price={property.price} />
                         </div>
                     </div>
                 </div>
